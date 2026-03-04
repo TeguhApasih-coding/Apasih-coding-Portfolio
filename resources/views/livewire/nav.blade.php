@@ -67,7 +67,7 @@
                 @csrf
 
                 <a :href="route('logout')" onclick="event.preventDefault();
-                                    this.closest('form').submit();" class="text-xs font-semibold hover:text-green-101 before:ml-auto after:content[''] after:w-0 after:h-0.5 after:bg-blue-101 after:block after:duration-300 before:content[''] before:w-0 before:h-0.5 before:bg-blue-101 before:block before:duration-300 hover:after:w-full hover:before:w-full hover:text-primary">Log Out</a>
+                                    this.closest('form').submit();" class="block pl-3 pr-4 py-2 border-l-4 text-base font-medium transition duration-150 ease-in-out text-primary hover:text-second hover:bg-primary focus:outline-none focus:text-second focus:bg-primary">Log Out</a>
             </form>
         </div>
     </div>
