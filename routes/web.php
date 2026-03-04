@@ -95,8 +95,16 @@ Route::middleware(['auth', 'admin'])->name('admin.')->prefix('admin')->group(fun
     Route::prefix('skills')->name('skills.')->group(function () {
         Route::post('reorder', [SkillController::class, 'reorder'])->name('reorder');
         Route::post('{skill}/toggle-status', [SkillController::class, 'toggleStatus'])->name('toggle-status');
+        // Resource route di bawah
+        Route::get('/', [SkillController::class, 'index'])->name('index');
+        Route::get('/create', [SkillController::class, 'create'])->name('create');
+        Route::post('/', [SkillController::class, 'store'])->name('store');
+        Route::get('/{skill}', [SkillController::class, 'show'])->name('show');
+        Route::get('/{skill}/edit', [SkillController::class, 'edit'])->name('edit');
+        Route::put('/{skill}', [SkillController::class, 'update'])->name('update');
+        Route::delete('/{skill}', [SkillController::class, 'destroy'])->name('destroy');
     });
-    Route::resource('skills', SkillController::class);    
+    //Route::resource('skills', SkillController::class);    
 
     // Sidebar toggle
     // Route::post('/sidebar/toggle', [SidebarController::class, 'toggle'])->name('sidebar.toggle');
