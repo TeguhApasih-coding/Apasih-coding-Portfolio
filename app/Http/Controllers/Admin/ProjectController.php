@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ProjectController extends Controller
 {
@@ -114,8 +115,8 @@ class ProjectController extends Controller
             // Basic Information
             'title' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:projects,slug',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
+            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
             'short_description' => 'required|string|max:500',
             'description' => 'required|string',
             'full_description' => 'nullable|string',
@@ -182,23 +183,66 @@ class ProjectController extends Controller
         $validated['is_featured'] = $request->has('is_featured');
         
         // Handle main image upload
+        // if ($request->hasFile('image')) {
+        //     $imagePath = $request->file('image')->store('projects/images', 'public');
+        //     $validated['image'] = $imagePath;
+        // }
+
+        // Handle main image upload ke public folder
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('projects/images', 'public');
-            $validated['image'] = $imagePath;
+            $image = $request->file('image');
+            $fileName = time() . '_' . Str::slug(pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $image->getClientOriginalExtension();
+            $folder = 'images/projects';
+            
+            // Pindahkan file ke public folder
+            $image->move(public_path($folder), $fileName);
+            
+            // Simpan path relatif ke public
+            $validated['image'] = $folder . '/' . $fileName;
         }
         
         // Handle thumbnail upload
+        // if ($request->hasFile('thumbnail')) {
+        //     $thumbnailPath = $request->file('thumbnail')->store('projects/thumbnails', 'public');
+        //     $validated['thumbnail'] = $thumbnailPath;
+        // }
+
+        // Handle thumbnail upload ke public folder
         if ($request->hasFile('thumbnail')) {
-            $thumbnailPath = $request->file('thumbnail')->store('projects/thumbnails', 'public');
-            $validated['thumbnail'] = $thumbnailPath;
+            $thumbnail = $request->file('thumbnail');
+            $fileName = time() . '_thumb_' . Str::slug(pathinfo($thumbnail->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $thumbnail->getClientOriginalExtension();
+            $folder = 'images/projects/thumbnails';
+            
+            // Pindahkan file ke public folder
+            $thumbnail->move(public_path($folder), $fileName);
+            
+            // Simpan path relatif ke public
+            $validated['thumbnail'] = $folder . '/' . $fileName;
         }
         
         // Handle gallery uploads
+        // if ($request->hasFile('gallery')) {
+        //     $galleryPaths = [];
+        //     foreach ($request->file('gallery') as $galleryImage) {
+        //         $galleryPaths[] = $galleryImage->store('projects/gallery', 'public');
+        //     }
+        //     $validated['gallery'] = json_encode($galleryPaths);
+        // }
+
+        // Handle gallery uploads
         if ($request->hasFile('gallery')) {
             $galleryPaths = [];
-            foreach ($request->file('gallery') as $galleryImage) {
-                $galleryPaths[] = $galleryImage->store('projects/gallery', 'public');
+            $folder = 'images/projects/gallery';
+            
+            foreach ($request->file('gallery') as $index => $galleryImage) {
+                $fileName = time() . '_gallery_' . $index . '_' . Str::slug(pathinfo($galleryImage->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $galleryImage->getClientOriginalExtension();
+                
+                // Pindahkan file ke public folder
+                $galleryImage->move(public_path($folder), $fileName);
+                
+                $galleryPaths[] = $folder . '/' . $fileName;
             }
+            
             $validated['gallery'] = json_encode($galleryPaths);
         }
         
@@ -276,8 +320,8 @@ class ProjectController extends Controller
             // Basic Information
             'title' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:projects,slug,' . $project->id,
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
+            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5120',
             'short_description' => 'required|string|max:500',
             'description' => 'required|string',
             'full_description' => 'nullable|string',
@@ -342,31 +386,96 @@ class ProjectController extends Controller
         $validated['is_featured'] = $request->has('is_featured') ? 1 : 0;
         
         // Handle main image upload
+        // if ($request->hasFile('image')) {
+        //     // Delete old image if exists
+        //     if ($project->image && !str_starts_with($project->image, 'http')) {
+        //         Storage::disk('public')->delete($project->image);
+        //     }
+        //     $imagePath = $request->file('image')->store('projects/images', 'public');
+        //     $validated['image'] = $imagePath;
+        // } else {
+        //     // Pertahankan image lama jika tidak ada file baru
+        //     $validated['image'] = $project->image;
+        // }
+
+        // Handle main image upload
         if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($project->image && !str_starts_with($project->image, 'http')) {
-                Storage::disk('public')->delete($project->image);
+            // Delete old image if exists and not default
+            if ($project->image && file_exists(public_path($project->image)) && !str_contains($project->image, 'default')) {
+                unlink(public_path($project->image));
             }
-            $imagePath = $request->file('image')->store('projects/images', 'public');
-            $validated['image'] = $imagePath;
-        } else {
-            // Pertahankan image lama jika tidak ada file baru
-            $validated['image'] = $project->image;
+            
+            $image = $request->file('image');
+            $fileName = time() . '_' . Str::slug(pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $image->getClientOriginalExtension();
+            $folder = 'images/projects';
+            
+            $image->move(public_path($folder), $fileName);
+            $validated['image'] = $folder . '/' . $fileName;
         }
         
         // Handle thumbnail upload
+        // if ($request->hasFile('thumbnail')) {
+        //     // Delete old thumbnail if exists
+        //     if ($project->thumbnail && !str_starts_with($project->thumbnail, 'http')) {
+        //         Storage::disk('public')->delete($project->thumbnail);
+        //     }
+        //     $thumbnailPath = $request->file('thumbnail')->store('projects/thumbnails', 'public');
+        //     $validated['thumbnail'] = $thumbnailPath;
+        // } else {
+        //     // Pertahankan thumbnail lama jika tidak ada file baru
+        //     $validated['thumbnail'] = $project->thumbnail;
+        // }
+
+        // Handle thumbnail upload
         if ($request->hasFile('thumbnail')) {
             // Delete old thumbnail if exists
-            if ($project->thumbnail && !str_starts_with($project->thumbnail, 'http')) {
-                Storage::disk('public')->delete($project->thumbnail);
+            if ($project->thumbnail && file_exists(public_path($project->thumbnail)) && !str_contains($project->thumbnail, 'default')) {
+                unlink(public_path($project->thumbnail));
             }
-            $thumbnailPath = $request->file('thumbnail')->store('projects/thumbnails', 'public');
-            $validated['thumbnail'] = $thumbnailPath;
-        } else {
-            // Pertahankan thumbnail lama jika tidak ada file baru
-            $validated['thumbnail'] = $project->thumbnail;
+            
+            $thumbnail = $request->file('thumbnail');
+            $fileName = time() . '_thumb_' . Str::slug(pathinfo($thumbnail->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $thumbnail->getClientOriginalExtension();
+            $folder = 'images/projects/thumbnails';
+            
+            $thumbnail->move(public_path($folder), $fileName);
+            $validated['thumbnail'] = $folder . '/' . $fileName;
         }
         
+        // Handle gallery uploads
+        // if ($request->has('clear_gallery') && $request->clear_gallery == '1') {
+        //     // Delete all gallery images
+        //     if ($project->gallery) {
+        //         $galleryImages = is_string($project->gallery) ? json_decode($project->gallery, true) : $project->gallery;
+        //         if (is_array($galleryImages)) {
+        //             foreach ($galleryImages as $image) {
+        //                 if (!str_starts_with($image, 'http')) {
+        //                     Storage::disk('public')->delete($image);
+        //                 }
+        //             }
+        //         }
+        //     }
+        //     $validated['gallery'] = json_encode([]);
+        // } elseif ($request->hasFile('gallery')) {
+        //     // Get existing gallery
+        //     $existingGallery = [];
+        //     if ($project->gallery) {
+        //         $existingGallery = is_string($project->gallery) ? json_decode($project->gallery, true) : $project->gallery;
+        //         if (!is_array($existingGallery)) {
+        //             $existingGallery = [];
+        //         }
+        //     }
+            
+        //     // Add new gallery images
+        //     foreach ($request->file('gallery') as $galleryImage) {
+        //         $existingGallery[] = $galleryImage->store('projects/gallery', 'public');
+        //     }
+            
+        //     $validated['gallery'] = json_encode($existingGallery);
+        // } else {
+        //     // Pertahankan gallery lama
+        //     $validated['gallery'] = $project->gallery;
+        // }
+
         // Handle gallery uploads
         if ($request->has('clear_gallery') && $request->clear_gallery == '1') {
             // Delete all gallery images
@@ -374,8 +483,8 @@ class ProjectController extends Controller
                 $galleryImages = is_string($project->gallery) ? json_decode($project->gallery, true) : $project->gallery;
                 if (is_array($galleryImages)) {
                     foreach ($galleryImages as $image) {
-                        if (!str_starts_with($image, 'http')) {
-                            Storage::disk('public')->delete($image);
+                        if (file_exists(public_path($image)) && !str_contains($image, 'default')) {
+                            unlink(public_path($image));
                         }
                     }
                 }
@@ -392,14 +501,15 @@ class ProjectController extends Controller
             }
             
             // Add new gallery images
-            foreach ($request->file('gallery') as $galleryImage) {
-                $existingGallery[] = $galleryImage->store('projects/gallery', 'public');
+            $folder = 'images/projects/gallery';
+            foreach ($request->file('gallery') as $index => $galleryImage) {
+                $fileName = time() . '_gallery_' . $index . '_' . Str::slug(pathinfo($galleryImage->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $galleryImage->getClientOriginalExtension();
+                
+                $galleryImage->move(public_path($folder), $fileName);
+                $existingGallery[] = $folder . '/' . $fileName;
             }
             
             $validated['gallery'] = json_encode($existingGallery);
-        } else {
-            // Pertahankan gallery lama
-            $validated['gallery'] = $project->gallery;
         }
         
         // Handle technologies - pastikan selalu array
@@ -438,6 +548,30 @@ class ProjectController extends Controller
         unset($validated['clear_gallery']);
         unset($validated['gallery.*']);
         
+        // try {
+        //     // Update project
+        //     $project->update($validated);
+            
+        //     // Sync skills
+        //     if ($request->has('skill_ids')) {
+        //         $project->skills()->sync($request->skill_ids);
+        //     } else {
+        //         $project->skills()->detach();
+        //     }
+
+        //     return redirect()->route('admin.projects.index')
+        //         ->with('success', 'Project updated successfully!');
+                
+        // } catch (\Exception $e) {
+        //     Log::error('Error updating project: ' . $e->getMessage(), [
+        //         'trace' => $e->getTraceAsString()
+        //     ]);
+            
+        //     return redirect()->back()
+        //         ->withInput()
+        //         ->with('error', 'Error updating project: ' . $e->getMessage());
+        // }
+
         try {
             // Update project
             $project->update($validated);
@@ -453,9 +587,7 @@ class ProjectController extends Controller
                 ->with('success', 'Project updated successfully!');
                 
         } catch (\Exception $e) {
-            Log::error('Error updating project: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Error updating project: ' . $e->getMessage());
             
             return redirect()->back()
                 ->withInput()
@@ -472,15 +604,36 @@ class ProjectController extends Controller
         $project = Project::findOrFail($id);
         
         // Delete associated images
-        if ($project->thumbnail_url && !str_starts_with($project->thumbnail_url, 'http')) {
-            Storage::delete('public/' . $project->thumbnail_url);
+        // if ($project->thumbnail_url && !str_starts_with($project->thumbnail_url, 'http')) {
+        //     Storage::delete('public/' . $project->thumbnail_url);
+        // }
+        
+        // // Delete gallery images jika ada
+        // if ($project->gallery && is_array($project->gallery)) {
+        //     foreach ($project->gallery as $image) {
+        //         if (!str_starts_with($image, 'http')) {
+        //             Storage::delete('public/' . $image);
+        //         }
+        //     }
+        // }
+
+        // Delete associated images
+        if ($project->image && file_exists(public_path($project->image)) && !str_contains($project->image, 'default')) {
+            unlink(public_path($project->image));
         }
         
-        // Delete gallery images jika ada
-        if ($project->gallery && is_array($project->gallery)) {
-            foreach ($project->gallery as $image) {
-                if (!str_starts_with($image, 'http')) {
-                    Storage::delete('public/' . $image);
+        if ($project->thumbnail && file_exists(public_path($project->thumbnail)) && !str_contains($project->thumbnail, 'default')) {
+            unlink(public_path($project->thumbnail));
+        }
+        
+        // Delete gallery images
+        if ($project->gallery) {
+            $galleryImages = is_string($project->gallery) ? json_decode($project->gallery, true) : $project->gallery;
+            if (is_array($galleryImages)) {
+                foreach ($galleryImages as $image) {
+                    if (file_exists(public_path($image)) && !str_contains($image, 'default')) {
+                        unlink(public_path($image));
+                    }
                 }
             }
         }
