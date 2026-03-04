@@ -200,7 +200,7 @@ class Project extends Model
             return asset('images/default-project.jpg');
         }
         
-        if (str_starts_with($this->image, 'http')) {
+        if (str_starts_with($this->image, 'http') || str_starts_with($this->image, 'https://')) {
             return $this->image;
         }
         
@@ -214,7 +214,7 @@ class Project extends Model
     public function getThumbnailUrlAttribute()
     {
         if ($this->thumbnail) {
-            if (str_starts_with($this->thumbnail, 'http')) {
+            if (str_starts_with($this->thumbnail, 'http') || str_starts_with($this->thumbnail, 'https://')) {
                 return $this->thumbnail;
             }
             return asset('storage/' . $this->thumbnail);
@@ -256,7 +256,7 @@ class Project extends Model
                     return null;
                 }
 
-                if (str_starts_with($image, 'http')) {
+                if (str_starts_with($image, 'http') || str_starts_with($image, 'https://')) {
                     return $image;
                 }
                 return asset('storage/' . $image);
@@ -272,7 +272,7 @@ class Project extends Model
                         return null;
                     }
 
-                    if (str_starts_with($image, 'http')) {
+                    if (str_starts_with($image, 'http') || str_starts_with($image, 'https://')) {
                         return $image;
                     }
                     return asset('storage/' . $image);
@@ -282,7 +282,7 @@ class Project extends Model
 
         // Jika gallery dalam bentuk string biasa (misalnya path file tunggal)
         if (is_string($gallery) && !empty($gallery)) {
-            if (str_starts_with($gallery, 'http')) {
+            if (str_starts_with($gallery, 'http') || str_starts_with($image, 'https://')) {
                 return [$gallery];
             }
             return [asset('storage/' . $gallery)];
