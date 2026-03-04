@@ -1,130 +1,92 @@
 #!/bin/bash
 
-# ============================================
-# RAILWAY STARTUP SCRIPT
-# ============================================
-# Script ini akan dijalankan setiap kali aplikasi di-start
-# di environment Railway
-
 echo "========================================="
-echo "🚀 RAILWAY STARTUP SCRIPT"
+echo "🚀 RAILWAY STARTUP SCRIPT - FIXED VERSION"
 echo "========================================="
 echo "Timestamp: $(date)"
-echo "Current directory: $(pwd)"
 echo ""
 
 # ============================================
-# STEP 1: Setup Storage Link
+# STEP 1: Fix Storage Link
 # ============================================
-echo "📁 STEP 1: Setting up storage link..."
+echo "📁 STEP 1: Fixing storage link..."
 echo "-----------------------------------------"
 
-# Cek apakah file storage-link.php ada
-if [ -f "storage-link.php" ]; then
-    echo "Found storage-link.php, executing..."
-    php storage-link.php
-else
-    echo "storage-link.php not found, using artisan storage:link"
+# Hapus link yang salah jika ada
+if [ -L "public/storage" ]; then
+    CURRENT_TARGET=$(readlink public/storage)
+    echo "Current symlink: public/storage -> $CURRENT_TARGET"
     
-    # Coba dengan artisan storage:link
-    php artisan storage:link
-    
-    # Jika gagal, buat manual
-    if [ $? -ne 0 ]; then
-        echo "Artisan storage:link failed, creating symlink manually..."
-        
-        TARGET="/app/storage/app/public"
-        LINK="/app/public/storage"
-        
-        # Hapus jika sudah ada
-        if [ -L "$LINK" ]; then
-            unlink "$LINK"
-        elif [ -d "$LINK" ]; then
-            rm -rf "$LINK"
-        fi
-        
-        # Buat symlink
-        ln -s "$TARGET" "$LINK"
-        
-        if [ $? -eq 0 ]; then
-            echo "✅ Manual symlink created successfully"
-        else
-            echo "❌ Failed to create symlink"
-            
-            # Fallback: copy folder
-            echo "Using fallback: copying files..."
-            mkdir -p "$LINK"
-            cp -r "$TARGET"/. "$LINK/"
-            echo "✅ Files copied as fallback"
-        fi
+    if [ "$CURRENT_TARGET" != "/app/storage/app/public" ] && [ "$CURRENT_TARGET" != "$(pwd)/storage/app/public" ]; then
+        echo "Removing incorrect symlink..."
+        unlink public/storage
+    else
+        echo "Symlink is correct."
     fi
+elif [ -d "public/storage" ] && [ ! -L "public/storage" ]; then
+    echo "public/storage is a directory, renaming..."
+    mv public/storage public/storage_backup_$(date +%Y%m%d_%H%M%S)
 fi
 
-echo ""
+# Jalankan storage link fixer
+php storage-link.php
 
 # ============================================
 # STEP 2: Run Database Migrations
 # ============================================
+echo ""
 echo "🗄️  STEP 2: Running database migrations..."
 echo "-----------------------------------------"
 php artisan migrate --force
-echo ""
 
 # ============================================
-# STEP 3: Clear and Cache Configurations
+# STEP 3: Cache Configurations
 # ============================================
+echo ""
 echo "⚙️  STEP 3: Caching configurations..."
 echo "-----------------------------------------"
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
-php artisan event:cache
-echo ""
 
 # ============================================
-# STEP 4: Check Storage Permissions
+# STEP 4: Set Permissions
 # ============================================
-echo "🔐 STEP 4: Setting storage permissions..."
+echo ""
+echo "🔐 STEP 4: Setting permissions..."
 echo "-----------------------------------------"
 chmod -R 775 storage
 chmod -R 775 bootstrap/cache
-chmod -R 775 public/storage
-echo "✅ Permissions set"
-echo ""
+chmod -R 775 public/storage 2>/dev/null || true
 
 # ============================================
-# STEP 5: Verify Setup
+# STEP 5: Create Debug Info
 # ============================================
-echo "🔍 STEP 5: Verifying setup..."
+echo ""
+echo "🔍 STEP 5: Creating debug info..."
 echo "-----------------------------------------"
 
-# Cek storage link
-if [ -L "public/storage" ]; then
-    echo "✅ Storage link: OK (symlink)"
-    ls -la public/storage | head -3
-elif [ -d "public/storage" ]; then
-    echo "⚠️  Storage link: OK (directory copy)"
-    ls -la public/storage | head -3
-else
-    echo "❌ Storage link: NOT FOUND"
-fi
+# Buat file debug info
+cat > public/storage-debug.json << EOF
+{
+  "timestamp": "$(date -Iseconds)",
+  "storage_link": "$(ls -la public/storage 2>&1)",
+  "storage_contents": $(php -r "print_r(json_encode(scandir('public/storage')));" 2>/dev/null || echo '"Error scanning"'),
+  "thumbnails": $(php -r "print_r(json_encode(array_slice(scandir('public/storage/projects/thumbnails'), 0, 10)));" 2>/dev/null || echo '"No thumbnails"')
+}
+EOF
 
-# Cek environment
-echo ""
-echo "🌍 Environment: $APP_ENV"
-echo "🔗 App URL: $APP_URL"
+echo "Debug info saved to public/storage-debug.json"
 
+# ============================================
+# STEP 6: Start Application
+# ============================================
 echo ""
 echo "========================================="
 echo "✅ STARTUP COMPLETE"
 echo "========================================="
-
-# ============================================
-# STEP 6: Start the Application
-# ============================================
 echo ""
 echo "🚀 Starting Laravel application..."
-echo "========================================="
 
-# Jalankan aplikasi (sesuai dengan port Railway)
+# Jalankan aplikasi
 php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
