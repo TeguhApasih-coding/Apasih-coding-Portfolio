@@ -204,8 +204,11 @@ class Project extends Model
             return $this->image;
         }
         
-        return asset('storage/' . $this->image);
+        // return asset('storage/' . $this->image);
         // return Storage::url($this->image);
+
+        // Path relatif ke public folder
+        return asset($this->image);
     }
 
     /**
@@ -217,8 +220,10 @@ class Project extends Model
             if (str_starts_with($this->thumbnail, 'http') || str_starts_with($this->thumbnail, 'https://')) {
                 return $this->thumbnail;
             }
-            return asset('storage/' . $this->thumbnail);
+            // return asset('storage/' . $this->thumbnail);
             // return Storage::url($this->thumbnail);
+
+            return asset($this->thumbnail);
         }
         
         // Fallback ke image utama
@@ -259,35 +264,49 @@ class Project extends Model
                 if (str_starts_with($image, 'http') || str_starts_with($image, 'https://')) {
                     return $image;
                 }
-                return asset('storage/' . $image);
+                // return asset('storage/' . $image);
+                return asset($image);
             }, array_filter($gallery));
         }
 
         // Jika gallery dalam bentuk string JSON
+        // if (is_string($gallery)) {
+        //     $decoded = json_decode($gallery, true);
+        //     if (is_array($decoded)) {
+        //         return array_map(function ($image) {
+        //             if (empty($image)) {
+        //                 return null;
+        //             }
+
+        //             if (str_starts_with($image, 'http')) {
+        //                 return $image;
+        //             }
+        //             return asset('storage/' . $image);
+        //         }, array_filter($decoded));
+        //     }
+        // }
+
         if (is_string($gallery)) {
             $decoded = json_decode($gallery, true);
             if (is_array($decoded)) {
                 return array_map(function ($image) {
-                    if (empty($image)) {
-                        return null;
-                    }
-
-                    if (str_starts_with($image, 'http') || str_starts_with($image, 'https://')) {
-                        return $image;
-                    }
-                    return asset('storage/' . $image);
+                    if (empty($image)) return null;
+                    if (str_starts_with($image, 'http')) return $image;
+                    return asset($image);
                 }, array_filter($decoded));
             }
         }
 
-        // Jika gallery dalam bentuk string biasa (misalnya path file tunggal)
-        if (is_string($gallery) && !empty($gallery)) {
-            if (str_starts_with($gallery, 'http') || str_starts_with($image, 'https://')) {
-                return [$gallery];
-            }
-            return [asset('storage/' . $gallery)];
-        }
         return [];
+
+        // Jika gallery dalam bentuk string biasa (misalnya path file tunggal)
+        // if (is_string($gallery) && !empty($gallery)) {
+        //     if (str_starts_with($gallery, 'http')) {
+        //         return [$gallery];
+        //     }
+        //     return [asset('storage/' . $gallery)];
+        // }
+        // return [];
     }
 
     /**
