@@ -46,7 +46,7 @@ class SkillController extends Controller
                 'name' => 'required|string|max:255',
                 'category_id' => 'nullable|exists:skill_categories,id',
                 'level' => 'required|integer|min:0|max:100',
-                'icon' => 'nullable|string|max:1000',
+                'icon' => 'nullable|string',
                 'color' => 'nullable|string|max:20',
                 'description' => 'nullable|string',
                 'display_order' => 'nullable|integer|min:0',
