@@ -2,116 +2,146 @@
 
 /**
  * File: storage-link.php
- * Location: root directory (sejajar dengan artisan)
- * Function: Membuat symlink storage untuk Railway
- * 
- * Cara menjalankan:
- * php storage-link.php
+ * Location: root directory
+ * Function: Memperbaiki storage link untuk Railway
  */
 
-echo "===== STORAGE LINK CREATOR FOR RAILWAY =====\n\n";
+echo "===== STORAGE LINK FIXER FOR RAILWAY =====\n\n";
 
-// Path target (folder storage yang sebenarnya)
 $target = __DIR__ . '/storage/app/public';
-// Path link (yang akan diakses melalui web)
 $link = __DIR__ . '/public/storage';
 
 echo "Target path: " . $target . "\n";
 echo "Link path: " . $link . "\n\n";
 
-// Cek apakah target folder exists
+// Cek apakah target folder ada
 if (!is_dir($target)) {
-    echo "ERROR: Target folder does not exist!\n";
-    echo "Creating target folder...\n";
-    
-    // Buat folder target jika belum ada
-    if (!is_dir(__DIR__ . '/storage/app')) {
-        mkdir(__DIR__ . '/storage/app', 0755, true);
-    }
-    
-    if (!is_dir($target)) {
-        mkdir($target, 0755, true);
-        echo "Target folder created.\n";
-    }
+    echo "❌ Target folder does not exist. Creating...\n";
+    mkdir($target, 0755, true);
+    echo "✅ Target folder created.\n";
+} else {
+    echo "✅ Target folder exists.\n";
 }
 
 // Cek apakah link sudah ada
 if (file_exists($link)) {
-    echo "Link path already exists.\n";
+    echo "⚠️  Link path already exists.\n";
     
     if (is_link($link)) {
-        // Jika sudah symlink, hapus dulu
-        $target_exists = file_exists(readlink($link));
-        echo "Current symlink points to: " . readlink($link) . "\n";
-        echo "Target exists: " . ($target_exists ? 'YES' : 'NO') . "\n";
+        // Jika symlink, cek targetnya
+        $currentTarget = readlink($link);
+        echo "   Current symlink points to: " . $currentTarget . "\n";
         
-        if ($target_exists && readlink($link) === $target) {
-            echo "Symlink already exists and points to correct target.\n";
-            echo "No action needed.\n";
-            exit(0);
+        if ($currentTarget === $target) {
+            echo "✅ Symlink already points to correct target.\n";
+        } else {
+            echo "⚠️  Symlink points to wrong target. Fixing...\n";
+            unlink($link);
+            echo "   Old symlink removed.\n";
+            
+            if (symlink($target, $link)) {
+                echo "✅ New symlink created successfully.\n";
+            } else {
+                echo "❌ Failed to create new symlink.\n";
+            }
+        }
+    } else {
+        // Jika bukan symlink (folder biasa atau file)
+        echo "⚠️  Path exists but is not a symlink.\n";
+        
+        // Backup folder yang ada
+        $backupPath = $link . '_backup_' . date('Ymd_His');
+        echo "   Renaming to: " . $backupPath . "\n";
+        
+        if (rename($link, $backupPath)) {
+            echo "   Backup created.\n";
+            
+            // Buat symlink baru
+            if (symlink($target, $link)) {
+                echo "✅ Symlink created successfully.\n";
+            } else {
+                echo "❌ Failed to create symlink.\n";
+                
+                // Restore backup jika gagal
+                rename($backupPath, $link);
+                echo "   Backup restored.\n";
+            }
+        } else {
+            echo "❌ Failed to rename existing path.\n";
+        }
+    }
+} else {
+    // Link tidak ada, buat baru
+    echo "Link path does not exist. Creating...\n";
+    
+    if (symlink($target, $link)) {
+        echo "✅ Symlink created successfully.\n";
+    } else {
+        echo "❌ Failed to create symlink.\n";
+        
+        // Fallback: copy folder
+        echo "   Using fallback: copying files...\n";
+        
+        // Hapus folder link jika ada
+        if (is_dir($link)) {
+            // Function to delete directory recursively
+            function deleteDir($dir) {
+                if (!is_dir($dir)) {
+                    return;
+                }
+                $files = array_diff(scandir($dir), array('.', '..'));
+                foreach ($files as $file) {
+                    $path = $dir . '/' . $file;
+                    is_dir($path) ? deleteDir($path) : unlink($path);
+                }
+                rmdir($dir);
+            }
+            deleteDir($link);
         }
         
-        echo "Removing old symlink...\n";
-        unlink($link);
-    } else {
-        // Jika bukan symlink (misalnya folder biasa), rename dulu
-        $backup_name = $link . '_backup_' . date('Ymd_His');
-        echo "Path exists but is not a symlink. Renaming to: " . $backup_name . "\n";
-        rename($link, $backup_name);
-    }
-}
-
-// Buat symlink baru
-echo "\nCreating new symlink...\n";
-
-if (symlink($target, $link)) {
-    echo "✅ SUCCESS: Storage link created successfully!\n";
-} else {
-    echo "❌ ERROR: Failed to create symlink using symlink() function.\n";
-    
-    // Coba metode alternatif dengan exec()
-    if (function_exists('exec')) {
-        echo "Trying alternative method using exec()...\n";
+        // Buat folder baru
+        mkdir($link, 0755, true);
         
-        $command = 'ln -s ' . escapeshellarg($target) . ' ' . escapeshellarg($link);
-        exec($command, $output, $return_var);
-        
-        if ($return_var === 0) {
-            echo "✅ SUCCESS: Storage link created using exec()!\n";
-        } else {
-            echo "❌ ERROR: Also failed using exec(). Return code: " . $return_var . "\n";
-            echo "Output: " . implode("\n", $output) . "\n";
-            
-            // Metode terakhir: copy folder sebagai fallback
-            echo "\nTrying fallback method: copying files...\n";
-            
-            if (!is_dir($link)) {
-                mkdir($link, 0755, true);
+        // Function to copy directory recursively
+        function copyDir($src, $dst) {
+            if (!is_dir($src)) {
+                return;
             }
             
-            // Function to copy directory recursively
-            function copyDir($src, $dst) {
-                $dir = opendir($src);
-                @mkdir($dst, 0755, true);
-                
-                while(false !== ($file = readdir($dir))) {
-                    if (($file != '.') && ($file != '..')) {
-                        if (is_dir($src . '/' . $file)) {
-                            copyDir($src . '/' . $file, $dst . '/' . $file);
-                        } else {
-                            copy($src . '/' . $file, $dst . '/' . $file);
-                        }
+            $dir = opendir($src);
+            if (!$dir) {
+                return;
+            }
+            
+            // Buat folder tujuan jika belum ada
+            if (!is_dir($dst)) {
+                mkdir($dst, 0755, true);
+            }
+            
+            // Copy semua file dan folder
+            while (($file = readdir($dir)) !== false) {
+                if ($file != '.' && $file != '..') {
+                    $srcPath = $src . '/' . $file;
+                    $dstPath = $dst . '/' . $file;
+                    
+                    if (is_dir($srcPath)) {
+                        // Recursive copy untuk folder
+                        copyDir($srcPath, $dstPath);
+                    } else {
+                        // Copy file
+                        copy($srcPath, $dstPath);
                     }
                 }
-                closedir($dir);
             }
-            
-            copyDir($target, $link);
-            echo "✅ SUCCESS: Files copied to public/storage as fallback.\n";
-            echo "⚠️  NOTE: This is not a symlink, changes in storage won't auto-reflect.\n";
+            closedir($dir);
         }
-    } else {
-        echo "❌ ERROR: exec() function is disabled.\n";
+        
+        // Jalankan copy
+        copyDir($target, $link);
+        echo "✅ Files copied as fallback.\n";
+        
+        // Set permissions
+        chmod($link, 0755);
     }
 }
 
@@ -122,22 +152,71 @@ if (file_exists($link)) {
     echo "✅ Link path exists.\n";
     
     if (is_link($link)) {
-        echo "✅ It is a valid symlink.\n";
+        echo "✅ It is a symlink.\n";
         echo "   Points to: " . readlink($link) . "\n";
     } else {
-        echo "⚠️  It is NOT a symlink (regular file/directory).\n";
+        echo "⚠️  It is NOT a symlink (regular directory).\n";
     }
     
-    // Cek isi directory
-    $files = scandir($link);
-    $file_count = count($files) - 2; // Kurangi . dan ..
-    echo "📁 Directory contains: " . $file_count . " items\n";
-    
-    if ($file_count > 0) {
-        echo "   Sample: " . implode(', ', array_slice(array_diff($files, ['.', '..']), 0, 5)) . "\n";
+    // Cek apakah bisa mengakses file
+    $testFile = $link . '/.gitignore';
+    if (file_exists($testFile)) {
+        echo "✅ Can access files in storage.\n";
+    } else {
+        echo "⚠️  Cannot access .gitignore file.\n";
+        
+        // List files di folder public/storage
+        if (is_dir($link)) {
+            $files = scandir($link);
+            $visibleFiles = array_diff($files, ['.', '..']);
+            
+            if (count($visibleFiles) > 0) {
+                echo "   Files in link: " . implode(', ', array_slice($visibleFiles, 0, 5)) . "\n";
+                
+                // Cek folder projects
+                if (is_dir($link . '/projects')) {
+                    echo "   Found 'projects' folder.\n";
+                    
+                    // Cek folder thumbnails
+                    if (is_dir($link . '/projects/thumbnails')) {
+                        echo "   Found 'thumbnails' folder.\n";
+                        
+                        $thumbFiles = scandir($link . '/projects/thumbnails');
+                        $thumbVisible = array_diff($thumbFiles, ['.', '..']);
+                        echo "   Thumbnails count: " . count($thumbVisible) . "\n";
+                        
+                        if (count($thumbVisible) > 0) {
+                            echo "   Sample thumbnails: " . implode(', ', array_slice($thumbVisible, 0, 3)) . "\n";
+                        }
+                    }
+                }
+            } else {
+                echo "   Link directory is empty!\n";
+            }
+        }
     }
 } else {
-    echo "❌ ERROR: Link path does not exist after creation attempts.\n";
+    echo "❌ Link path does not exist.\n";
+}
+
+// Cek file spesifik yang bermasalah
+$specificFile = 'projects/thumbnails/ZtdS4gsrvXWHAUalTi5NetHNeGt1z7EPpjK1raX4.png';
+$targetFile = $target . '/' . $specificFile;
+$linkFile = $link . '/' . $specificFile;
+
+echo "\n===== CHECKING SPECIFIC FILE =====\n";
+echo "File: " . $specificFile . "\n";
+echo "Target exists: " . (file_exists($targetFile) ? '✅ YES' : '❌ NO') . "\n";
+echo "Link exists: " . (file_exists($linkFile) ? '✅ YES' : '❌ NO') . "\n";
+
+if (file_exists($targetFile)) {
+    echo "Target file size: " . filesize($targetFile) . " bytes\n";
+    echo "Target file permissions: " . substr(sprintf('%o', fileperms($targetFile)), -4) . "\n";
+}
+
+if (file_exists($linkFile)) {
+    echo "Link file size: " . filesize($linkFile) . " bytes\n";
+    echo "Link file permissions: " . substr(sprintf('%o', fileperms($linkFile)), -4) . "\n";
 }
 
 echo "\n===== DONE =====\n";
