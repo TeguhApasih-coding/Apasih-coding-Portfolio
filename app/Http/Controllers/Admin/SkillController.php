@@ -7,6 +7,7 @@ use App\Models\Skill;
 use App\Models\SkillCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SkillController extends Controller
 {
@@ -39,26 +40,41 @@ class SkillController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:skills',
-            'category_id' => 'nullable|exists:skill_categories,id',
-            'icon' => 'nullable|string',
-            'color' => 'nullable|string|max:7',
-            'level' => 'required|integer|min:0|max:100',
-            'display_order' => 'nullable|integer|min:0',
-            'is_featured' => 'nullable|boolean',
-            'is_active' => 'nullable|boolean',
-            'description' => 'nullable|string',
-        ]);
+        // $validated = $request->validate([
+        //     'name' => 'required|string|max:255|unique:skills',
+        //     'category_id' => 'nullable|exists:skill_categories,id',
+        //     'icon' => 'nullable|string',
+        //     'color' => 'nullable|string|max:7',
+        //     'level' => 'required|integer|min:0|max:100',
+        //     'display_order' => 'nullable|integer|min:0',
+        //     'is_featured' => 'nullable|boolean',
+        //     'is_active' => 'nullable|boolean',
+        //     'description' => 'nullable|string',
+        // ]);
 
-        $validated['is_featured'] = $request->has('is_featured');
-        $validated['is_active'] = $request->has('is_active');
+        // $validated['is_featured'] = $request->has('is_featured');
+        // $validated['is_active'] = $request->has('is_active');
         
-        Skill::create($validated);
+        // Skill::create($validated);
 
-        return redirect()
-            ->route('admin.skills.index')
-            ->with('success', 'Skill created successfully.');
+        // return redirect()
+        //     ->route('admin.skills.index')
+        //     ->with('success', 'Skill created successfully.');
+        try {
+            // Log request data untuk debugging
+            Log::info('Skill store request:', $request->all());
+            
+            // Validasi akan diisi nanti
+            
+            // Sementara return response dulu
+            return response()->json(['message' => 'Test'], 200);
+            
+        } catch (\Exception $e) {
+            Log::error('Error in skill store: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**
