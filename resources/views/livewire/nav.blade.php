@@ -7,8 +7,8 @@
         {{-- Navigation --}}
         <div class="flex">
             <div id="link" class="hidden md:flex space-x-4 text-primary font-montser text-center items-center justify-center">
-                <a href="/" class="text-xs font-semibold hover:text-green-101 before:ml-auto after:content[''] after:w-0 after:h-0.5 after:bg-blue-101 after:block after:duration-300 before:content[''] before:w-0 before:h-0.5 before:bg-blue-101 before:block before:duration-300 hover:after:w-full hover:before:w-full hover:text-primary">Home</a>
-                <a href="/projects" class="text-xs font-semibold hover:text-green-101 before:ml-auto after:content[''] after:w-0 after:h-0.5 after:bg-blue-101 after:block after:duration-300 before:content[''] before:w-0 before:h-0.5 before:bg-blue-101 before:block before:duration-300 hover:after:w-full hover:before:w-full hover:text-primary">Projects</a>
+                <a href="{{ route('home') }}" class="text-xs font-semibold hover:text-green-101 before:ml-auto after:content[''] after:w-0 after:h-0.5 after:bg-blue-101 after:block after:duration-300 before:content[''] before:w-0 before:h-0.5 before:bg-blue-101 before:block before:duration-300 hover:after:w-full hover:before:w-full hover:text-primary">Home</a>
+                <a href="{{ route('projects.index') }}" class="text-xs font-semibold hover:text-green-101 before:ml-auto after:content[''] after:w-0 after:h-0.5 after:bg-blue-101 after:block after:duration-300 before:content[''] before:w-0 before:h-0.5 before:bg-blue-101 before:block before:duration-300 hover:after:w-full hover:before:w-full hover:text-primary">Projects</a>
 
                 {{-- @if (Route::has('login'))
                     @auth
@@ -52,18 +52,27 @@
 
         <!-- Icon Navigation saat berada di samping -->
         {{-- <div id="nav-icons" class="hidden flex-col text-primary transition duration-300 ease-in-out mix-blend-difference space-y-4">
-            <a href="#home" class="mix-blend-difference" title="Home">
+            <a href="{{ route('home') }}" class="mix-blend-difference" title="Home">
                 <svg class="w-6 h-6 stroke-red-101" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M22 22L2 22" stroke="current" stroke-width="1.5" stroke-linecap="round"></path> <path d="M2 11L6.06296 7.74968M22 11L13.8741 4.49931C12.7784 3.62279 11.2216 3.62279 10.1259 4.49931L9.34398 5.12486" stroke="current" stroke-width="1.5" stroke-linecap="round"></path> <path d="M15.5 5.5V3.5C15.5 3.22386 15.7239 3 16 3H18.5C18.7761 3 19 3.22386 19 3.5V8.5" stroke="current" stroke-width="1.5" stroke-linecap="round"></path> <path d="M4 22V9.5" stroke="current" stroke-width="1.5" stroke-linecap="round"></path> <path d="M20 9.5V13.5M20 22V17.5" stroke="current" stroke-width="1.5" stroke-linecap="round"></path> <path d="M15 22V17C15 15.5858 15 14.8787 14.5607 14.4393C14.1213 14 13.4142 14 12 14C10.5858 14 9.87868 14 9.43934 14.4393M9 22V17" stroke="current" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M14 9.5C14 10.6046 13.1046 11.5 12 11.5C10.8954 11.5 10 10.6046 10 9.5C10 8.39543 10.8954 7.5 12 7.5C13.1046 7.5 14 8.39543 14 9.5Z" stroke="current" stroke-width="1.5"></path> </g></svg>
             </a>
-            <a href="#about" class="mix-blend-difference" title="About me">
-                <svg class="w-6 h-6 stroke-red-101" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M12 17V11" stroke="current" stroke-width="1.5" stroke-linecap="round"></path> <circle cx="1" cy="1" r="1" transform="matrix(1 0 0 -1 11 9)" fill="#19485f"></circle> <path d="M22 12C22 16.714 22 19.0711 20.5355 20.5355C19.0711 22 16.714 22 12 22C7.28595 22 4.92893 22 3.46447 20.5355C2 19.0711 2 16.714 2 12C2 7.28595 2 4.92893 3.46447 3.46447C4.92893 2 7.28595 2 12 2C16.714 2 19.0711 2 20.5355 3.46447C21.5093 4.43821 21.8356 5.80655 21.9449 8" stroke="current" stroke-width="1.5" stroke-linecap="round"></path> </g></svg>
-            </a>
-            <a href="#project" class="mix-blend-difference" title="Project Gallery">
+            <a href="{{ route('projects.index') }}" class="mix-blend-difference" title="Project Gallery">
                 <svg class="w-6 h-6 stroke-red-101" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M13 7L15 9L20 4" stroke="current" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M2 12.5001L3.75159 10.9675C4.66286 10.1702 6.03628 10.2159 6.89249 11.0721L11.1822 15.3618C11.8694 16.0491 12.9512 16.1428 13.7464 15.5839L14.0446 15.3744C15.1888 14.5702 16.7369 14.6634 17.7765 15.599L21 18.5001" stroke="current" stroke-width="1.5" stroke-linecap="round"></path> <path d="M22 12C22 16.714 22 19.0711 20.5355 20.5355C19.0711 22 16.714 22 12 22C7.28595 22 4.92893 22 3.46447 20.5355C2 19.0711 2 16.714 2 12C2 10.8717 2 9.87835 2.02008 9M12 2C7.28595 2 4.92893 2 3.46447 3.46447C3.03965 3.88929 2.73806 4.38921 2.52396 5" stroke="current" stroke-width="1.5" stroke-linecap="round"></path> </g></svg>
             </a>
-            <a href="#contact" class="mix-blend-difference" title="Contact">
-                <svg class="w-6 h-6 stroke-red-101" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M22 12C22 15.7712 22 17.6569 20.8284 18.8284C19.6569 20 17.7712 20 14 20H10C6.22876 20 4.34315 20 3.17157 18.8284C2 17.6569 2 15.7712 2 12C2 8.22876 2 6.34315 3.17157 5.17157C4.34315 4 6.22876 4 10 4H14C17.7712 4 19.6569 4 20.8284 5.17157C21.4816 5.82475 21.7706 6.69989 21.8985 8" stroke="current" stroke-width="1.5" stroke-linecap="round"></path> <path d="M18 8L15.8411 9.79908C14.0045 11.3296 13.0861 12.0949 12 12.0949C11.3507 12.0949 10.7614 11.8214 10 11.2744M6 8L6.9 8.75L7.8 9.5" stroke="current" stroke-width="1.5" stroke-linecap="round"></path> </g></svg>
-            </a>
+            <button onclick="openModal()" class="text-xs font-semibold hover:text-green-101 before:ml-auto after:content[''] after:w-0 after:h-0.5 after:bg-blue-101 after:block after:duration-300 before:content[''] before:w-0 before:h-0.5 before:bg-blue-101 before:block before:duration-300 hover:after:w-full hover:before:w-full hover:text-primary">Contact</button>
+            <!-- Authentication -->
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+
+                <a :href="route('logout')" onclick="event.preventDefault();
+                                    this.closest('form').submit();" class="text-xs font-semibold hover:text-green-101 before:ml-auto after:content[''] after:w-0 after:h-0.5 after:bg-blue-101 after:block after:duration-300 before:content[''] before:w-0 before:h-0.5 before:bg-blue-101 before:block before:duration-300 hover:after:w-full hover:before:w-full hover:text-primary">Log Out</a>
+
+                {{-- <x-responsive-nav-link :href="route('logout')"
+                        onclick="event.preventDefault();
+                                    this.closest('form').submit();">
+                    <span class="text-xs font-semibold hover:text-green-101 before:ml-auto after:content[''] after:w-0 after:h-0.5 after:bg-blue-101 after:block after:duration-300 before:content[''] before:w-0 before:h-0.5 before:bg-blue-101 before:block before:duration-300 hover:after:w-full hover:before:w-full hover:text-primary">Log Out</span>
+                    {{ __('Log Out') }}
+                </x-responsive-nav-link> --}}
+            </form>
         </div> --}}
     </div>
 
