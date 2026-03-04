@@ -40,40 +40,62 @@ class SkillController extends Controller
      */
     public function store(Request $request)
     {
-        // $validated = $request->validate([
-        //     'name' => 'required|string|max:255|unique:skills',
-        //     'category_id' => 'nullable|exists:skill_categories,id',
-        //     'icon' => 'nullable|string',
-        //     'color' => 'nullable|string|max:7',
-        //     'level' => 'required|integer|min:0|max:100',
-        //     'display_order' => 'nullable|integer|min:0',
-        //     'is_featured' => 'nullable|boolean',
-        //     'is_active' => 'nullable|boolean',
-        //     'description' => 'nullable|string',
-        // ]);
-
-        // $validated['is_featured'] = $request->has('is_featured');
-        // $validated['is_active'] = $request->has('is_active');
-        
-        // Skill::create($validated);
-
-        // return redirect()
-        //     ->route('admin.skills.index')
-        //     ->with('success', 'Skill created successfully.');
         try {
-            // Log request data untuk debugging
-            Log::info('Skill store request:', $request->all());
+            // Validasi data
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'category_id' => 'nullable|exists:skill_categories,id',
+                'level' => 'required|integer|min:0|max:100',
+                'icon' => 'nullable|string|max:1000',
+                'color' => 'nullable|string|max:20',
+                'description' => 'nullable|string',
+                'display_order' => 'nullable|integer|min:0',
+                'is_featured' => 'nullable|boolean',
+                'is_active' => 'nullable|boolean'
+            ]);
+
+            // Set default values
+            $validated['is_featured'] = $request->has('is_featured') ? true : false;
+            $validated['is_active'] = $request->has('is_active') ? true : false;
             
-            // Validasi akan diisi nanti
-            
-            // Sementara return response dulu
-            return response()->json(['message' => 'Test'], 200);
-            
+            // Set display_order jika tidak diisi
+            if (!isset($validated['display_order']) || $validated['display_order'] === null) {
+                $validated['display_order'] = Skill::max('display_order') + 1;
+            }
+
+            // Gunakan color dari color_hex jika ada
+            if ($request->filled('color_hex')) {
+                $validated['color'] = $request->color_hex;
+            }
+
+            // Buat skill baru
+            $skill = Skill::create($validated);
+
+            // Log success
+            Log::info('Skill created successfully:', ['id' => $skill->id, 'name' => $skill->name]);
+
+            // Redirect dengan pesan sukses
+            return redirect()
+                ->route('admin.skills.index')
+                ->with('success', 'Skill "' . $skill->name . '" has been created successfully.');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Kembali ke form dengan error validasi
+            return redirect()
+                ->back()
+                ->withErrors($e->validator)
+                ->withInput();
+                
         } catch (\Exception $e) {
-            Log::error('Error in skill store: ' . $e->getMessage());
+            // Log error
+            Log::error('Error creating skill: ' . $e->getMessage());
             Log::error($e->getTraceAsString());
-            
-            return response()->json(['error' => $e->getMessage()], 500);
+
+            // Redirect dengan pesan error
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Failed to create skill. Error: ' . $e->getMessage());
         }
     }
 
